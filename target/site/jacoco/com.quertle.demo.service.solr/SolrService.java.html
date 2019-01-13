@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SolrService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">demo</a> &gt; <a href="index.source.html" class="el_package">com.quertle.demo.service.solr</a> &gt; <span class="el_source">SolrService.java</span></div><h1>SolrService.java</h1><pre class="source lang-java linenums">package com.quertle.demo.service.solr;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrInputDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.quertle.demo.dto.QuestionSearchDto;
+import com.quertle.demo.dto.SearchDto;
+import com.quertle.demo.model.FierceNews;
+import com.quertle.demo.model.Question;
+import com.quertle.demo.repository.FierceNewsRepository;
+import com.quertle.demo.service.lucene.LuceneService;
+
+/**
+ * This class controls all the things needed for solr.
+ * 
+ * @author ashesh
+ *
+ */
+@Service
+<span class="fc" id="L33">public class SolrService {</span>
+
+<span class="fc" id="L35">	private static final Logger LOG = LoggerFactory.getLogger(LuceneService.class);</span>
+
+	@Autowired
+	private HttpSolrClient solrClient;
+
+	@Autowired
+	private FierceNewsRepository fierceNewsRepository;
+
+	/**
+	 * This method search the indexed document from solr
+	 * 
+	 * @param content
+	 */
+	public SearchDto search(SearchDto searchDto) {
+<span class="nc" id="L49">		List&lt;FierceNews&gt; solr_news = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L50">		String content = searchDto.getContent();</span>
+<span class="nc" id="L51">		LOG.info(&quot;Content :{}&quot;, content);</span>
+
+<span class="nc" id="L53">		SolrQuery query = new SolrQuery();</span>
+<span class="nc" id="L54">		query.set(&quot;q&quot;, FierceNews.getQuery(content));</span>
+		// query.set(&quot;q&quot;, &quot;date_published:&quot; + content);
+		// query.set(&quot;q&quot;, &quot;full_text:&quot; + content);
+		// query.set(&quot;q&quot;, &quot;url_link:&quot; + content);
+		// query.set(&quot;q&quot;, &quot;authors:&quot; + content);
+
+<span class="nc" id="L60">		LOG.info(&quot;Query :{}&quot;, query);</span>
+		QueryResponse response;
+		try {
+<span class="nc" id="L63">			response = solrClient.query(query);</span>
+<span class="nc" id="L64">			SolrDocumentList docList = response.getResults();</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">			for (SolrDocument doc : docList) {</span>
+<span class="nc" id="L67">				FierceNews fierceNews = FierceNews.getFromDocument(doc);</span>
+<span class="nc" id="L68">				solr_news.add(fierceNews);</span>
+<span class="nc" id="L69">			}</span>
+<span class="nc" id="L70">			searchDto.setFierceNews(solr_news);</span>
+<span class="nc" id="L71">		} catch (SolrServerException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L73">			e.printStackTrace();</span>
+<span class="nc" id="L74">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L76">			e.printStackTrace();</span>
+<span class="nc" id="L77">		}</span>
+
+<span class="nc" id="L79">		return searchDto;</span>
+	}
+
+	/**
+	 * This method saves the fierceNews using Solr.
+	 * 
+	 * @param generalFierceNews
+	 */
+	public void save(List&lt;FierceNews&gt; generalFierceNews) {
+<span class="nc" id="L88">		List&lt;SolrInputDocument&gt; solrDocs = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L89">		generalFierceNews.forEach(g -&gt; {</span>
+<span class="nc" id="L90">			solrDocs.add(g.getSolrDocument());</span>
+<span class="nc" id="L91">		});</span>
+
+		try {
+<span class="nc" id="L94">			solrClient.add(solrDocs);</span>
+<span class="nc" id="L95">			solrClient.commit();</span>
+<span class="nc" id="L96">		} catch (SolrServerException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L98">			e.printStackTrace();</span>
+<span class="nc" id="L99">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L101">			e.printStackTrace();</span>
+<span class="nc" id="L102">		}</span>
+
+<span class="nc" id="L104">	}</span>
+
+	/**
+	 * This method index the questions using solr
+	 * 
+	 * @param questions
+	 */
+	public void saveQuestions(List&lt;Question&gt; questions) {
+<span class="fc" id="L112">		List&lt;SolrInputDocument&gt; solrDocs = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L113">		questions.forEach(q -&gt; {</span>
+<span class="fc" id="L114">			solrDocs.add(q.getSolrDocument());</span>
+<span class="fc" id="L115">		});</span>
+
+		try {
+<span class="nc" id="L118">			solrClient.add(solrDocs);</span>
+<span class="nc" id="L119">			solrClient.commit();</span>
+<span class="fc" id="L120">		} catch (SolrServerException e) {</span>
+			// TODO Auto-generated catch block
+<span class="fc" id="L122">			e.printStackTrace();</span>
+<span class="nc" id="L123">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L125">			e.printStackTrace();</span>
+<span class="pc" id="L126">		}</span>
+<span class="fc" id="L127">	}</span>
+
+	public QuestionSearchDto searchQuestion(QuestionSearchDto questionSearchDto) {
+<span class="fc" id="L130">		LOG.info(&quot;Search Content:{}&quot;, questionSearchDto.getContent());</span>
+
+<span class="fc" id="L132">		List&lt;Question&gt; solr_answer = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L133">		String content = questionSearchDto.getContent();</span>
+
+<span class="fc" id="L135">		SolrQuery query = new SolrQuery();</span>
+<span class="fc" id="L136">		query.set(&quot;q&quot;, Question.getQuery(content));</span>
+
+<span class="fc" id="L138">		LOG.debug(&quot;Query :{}&quot;, query);</span>
+//		System.exit(-1);
+		QueryResponse response;
+		try {
+<span class="nc" id="L142">			response = solrClient.query(query);</span>
+<span class="nc" id="L143">			SolrDocumentList docList = response.getResults();</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">			for (SolrDocument doc : docList) {</span>
+<span class="nc" id="L146">				Question question = Question.getFromDocument(doc);</span>
+<span class="nc" id="L147">				solr_answer.add(question);</span>
+<span class="nc" id="L148">			}</span>
+<span class="nc" id="L149">			questionSearchDto.setQuestion(solr_answer);</span>
+<span class="fc" id="L150">		} catch (SolrServerException e) {</span>
+			// TODO Auto-generated catch block
+<span class="fc" id="L152">			e.printStackTrace();</span>
+<span class="nc" id="L153">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L155">			e.printStackTrace();</span>
+<span class="pc" id="L156">		}</span>
+
+<span class="fc" id="L158">		return questionSearchDto;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

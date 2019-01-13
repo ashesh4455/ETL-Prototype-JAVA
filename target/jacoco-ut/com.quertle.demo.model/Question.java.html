@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Question.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">demo</a> &gt; <a href="index.source.html" class="el_package">com.quertle.demo.model</a> &gt; <span class="el_source">Question.java</span></div><h1>Question.java</h1><pre class="source lang-java linenums">package com.quertle.demo.model;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrInputDocument;
+
+<span class="fc" id="L10">public class Question {</span>
+	private static final String ANSWERS = &quot;answers&quot;;
+
+	private static final String QUESTION_BODY = &quot;questionBody&quot;;
+
+	private static final String QUESTION_BODY_LINK = &quot;questionBodyLink&quot;;
+
+	private static final String TITLE = &quot;title&quot;;
+
+	private static final String ID = &quot;id&quot;;
+
+	private String title;
+
+	private String questionBodyLink;
+
+	private String questionBody;
+
+	private List&lt;String&gt; answers;
+
+	public String getTitle() {
+<span class="nc" id="L30">		return title;</span>
+	}
+
+	public void setTitle(String title) {
+<span class="fc" id="L34">		this.title = title;</span>
+<span class="fc" id="L35">	}</span>
+
+	public String getQuestionBodyLink() {
+<span class="fc" id="L38">		return questionBodyLink;</span>
+	}
+
+	public void setQuestionBodyLink(String questionBodyLink) {
+<span class="fc" id="L42">		this.questionBodyLink = questionBodyLink;</span>
+<span class="fc" id="L43">	}</span>
+
+	public String getQuestionBody() {
+<span class="nc" id="L46">		return questionBody;</span>
+	}
+
+	public void setQuestionBody(String questionBody) {
+<span class="fc" id="L50">		this.questionBody = questionBody;</span>
+<span class="fc" id="L51">	}</span>
+
+	public List&lt;String&gt; getAnswers() {
+<span class="nc" id="L54">		return answers;</span>
+	}
+
+	public void setAnswers(List&lt;String&gt; answers) {
+<span class="fc" id="L58">		this.answers = answers;</span>
+<span class="fc" id="L59">	}</span>
+
+	@Override
+	public String toString() {
+<span class="fc" id="L63">		return title + &quot; &quot; + questionBody;</span>
+	}
+
+	/**
+	 * This method add data to our index
+	 * 
+	 * @return
+	 */
+	public SolrInputDocument getSolrDocument() {
+<span class="fc" id="L72">		SolrInputDocument document = new SolrInputDocument();</span>
+<span class="fc" id="L73">		document.addField(ID, UUID.randomUUID().toString());</span>
+<span class="fc" id="L74">		document.addField(TITLE, title);</span>
+<span class="fc" id="L75">		document.addField(QUESTION_BODY_LINK, questionBodyLink);</span>
+<span class="fc" id="L76">		document.addField(QUESTION_BODY, questionBody);</span>
+
+<span class="pc bpc" id="L78" title="1 of 4 branches missed.">		if (answers != null &amp;&amp; answers.size() &gt; 0) {</span>
+<span class="fc" id="L79">			answers.forEach(a -&gt; {</span>
+<span class="fc" id="L80">				document.addField(ANSWERS, a);</span>
+<span class="fc" id="L81">			});</span>
+		}
+<span class="fc" id="L83">		return document;</span>
+	}
+
+	public static String[] getFields() {
+<span class="fc" id="L87">		String[] s = { QUESTION_BODY, TITLE };</span>
+<span class="fc" id="L88">		return s;</span>
+	}
+
+	public static String getQuery(String query) {
+<span class="fc" id="L92">		StringBuffer fullQuery = new StringBuffer();</span>
+<span class="fc" id="L93">		String[] fields = getFields();</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">		for (String f : fields) {</span>
+<span class="fc" id="L95">			fullQuery.append(f).append(&quot;:&quot;).append(query).append(&quot; or &quot;);</span>
+		}
+<span class="fc" id="L97">		String tempQuery = fullQuery.toString();</span>
+<span class="fc" id="L98">		tempQuery = tempQuery.substring(0, tempQuery.lastIndexOf(&quot;or&quot;));</span>
+<span class="fc" id="L99">		return tempQuery;</span>
+	}
+
+	/**
+	 * This method get the content from solr document
+	 * 
+	 * @param d
+	 * @return
+	 */
+	public static Question getFromDocument(SolrDocument d) {
+<span class="nc" id="L109">		Question question = new Question();</span>
+<span class="nc" id="L110">		question.setTitle(d.getFieldValue(TITLE).toString());</span>
+<span class="nc" id="L111">		question.setQuestionBody(d.getFieldValue(QUESTION_BODY).toString());</span>
+<span class="nc" id="L112">		List&lt;String&gt; answers = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">		if (d.getFieldValues(ANSWERS) != null) {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">			for (Object o : d.getFieldValues(ANSWERS)) {</span>
+<span class="nc" id="L115">				answers.add(o.toString());</span>
+<span class="nc" id="L116">			}</span>
+<span class="nc" id="L117">			question.setAnswers(answers);</span>
+		}
+
+<span class="nc" id="L120">		return question;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

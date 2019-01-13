@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuestionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">demo</a> &gt; <a href="index.source.html" class="el_package">com.quertle.demo.service</a> &gt; <span class="el_source">QuestionService.java</span></div><h1>QuestionService.java</h1><pre class="source lang-java linenums">package com.quertle.demo.service;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.quertle.demo.model.Question;
+import com.quertle.demo.service.solr.SolrService;
+
+@Service
+<span class="fc" id="L17">public class QuestionService {</span>
+
+	@Autowired
+	private SolrService solrService;
+
+	/**
+	 * This method parse the url content
+	 * 
+	 * @return
+	 */
+	public List&lt;Question&gt; getData() {
+<span class="fc" id="L28">		List&lt;Question&gt; questions = new ArrayList&lt;&gt;();</span>
+		try {
+<span class="fc" id="L30">			org.jsoup.nodes.Document doc = Jsoup.connect(&quot;https://stackoverflow.com/questions/tagged/laravel-5&quot;).get();</span>
+<span class="fc" id="L31">			Elements elements = doc.getElementsByClass(&quot;summary&quot;);</span>
+
+<span class="fc bfc" id="L33" title="All 2 branches covered.">			for (Element element : elements) {</span>
+<span class="fc" id="L34">				String questionTitle = element.getElementsByClass(&quot;question-hyperlink&quot;).html();</span>
+<span class="fc" id="L35">				String questionBodyLink = element.getElementsByAttribute(&quot;href&quot;).get(0).absUrl(&quot;href&quot;);</span>
+
+<span class="fc" id="L37">				Question question = new Question();</span>
+<span class="fc" id="L38">				question.setTitle(questionTitle);</span>
+<span class="fc" id="L39">				question.setQuestionBodyLink(questionBodyLink);</span>
+<span class="fc" id="L40">				questions.add(question);</span>
+<span class="fc" id="L41">			}</span>
+
+<span class="fc" id="L43">			questions.forEach(q -&gt; {</span>
+				org.jsoup.nodes.Document questionBodyLink;
+				try {
+<span class="fc" id="L46">					questionBodyLink = Jsoup.connect(q.getQuestionBodyLink()).get();</span>
+<span class="fc" id="L47">					Elements questionBodyElements = questionBodyLink.getElementsByClass(&quot;post-text&quot;);</span>
+<span class="fc" id="L48">					String questionBody = Jsoup.parse(questionBodyElements.get(0).html()).text();</span>
+<span class="fc" id="L49">					q.setQuestionBody(questionBody);</span>
+
+<span class="fc" id="L51">					List&lt;String&gt; answers = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">					for (int i = 1; i &lt; questionBodyElements.size(); i++) {</span>
+<span class="fc" id="L53">						String answer = Jsoup.parse(questionBodyElements.get(i).html()).text();</span>
+<span class="fc" id="L54">						answers.add(answer);</span>
+					}
+<span class="fc" id="L56">					q.setAnswers(answers);</span>
+
+<span class="nc" id="L58">				} catch (Exception e) {</span>
+					// TODO Auto-generated catch block
+<span class="nc" id="L60">					e.printStackTrace();</span>
+<span class="fc" id="L61">				}</span>
+
+<span class="fc" id="L63">			});</span>
+
+<span class="nc" id="L65">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L67">			e.printStackTrace();</span>
+<span class="fc" id="L68">		}</span>
+<span class="fc" id="L69">		return questions;</span>
+	}
+
+	/**
+	 * This method parse the url content and calls the solr for indexing
+	 */
+	public void parseURLContent() {
+<span class="nc" id="L76">		List&lt;Question&gt; questions = getData();</span>
+		// questions.forEach(System.out::println);
+<span class="nc" id="L78">		loadQuestionsToSolr(questions);</span>
+
+<span class="nc" id="L80">	}</span>
+
+	/**
+	 * This method call the method to index the content using solr
+	 * 
+	 * @param questions
+	 */
+	private void loadQuestionsToSolr(List&lt;Question&gt; questions) {
+<span class="nc" id="L88">		solrService.saveQuestions(questions);</span>
+<span class="nc" id="L89">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

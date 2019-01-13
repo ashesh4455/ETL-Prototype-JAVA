@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Author.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">demo</a> &gt; <a href="index.source.html" class="el_package">com.quertle.demo.model</a> &gt; <span class="el_source">Author.java</span></div><h1>Author.java</h1><pre class="source lang-java linenums">package com.quertle.demo.model;
+
+import java.util.UUID;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+
+@Entity
+public class Author {
+
+	private static final String FIRST_NAME = &quot;firstName&quot;;
+
+	private static final String ID = &quot;id&quot;;
+
+	private static final String LAST_NAME = &quot;lastName&quot;;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
+
+	private String firstName;
+	private String lastName;
+
+	@ManyToOne
+	@JoinColumn
+	private FierceNews fierceNews;
+	
+	
+
+	public Author() {
+<span class="fc" id="L40">		super();</span>
+<span class="fc" id="L41">	}</span>
+
+<span class="nc" id="L43">	public Author(String firstName, String lastName) {</span>
+		// TODO Auto-generated constructor stub
+<span class="nc" id="L45">		this.firstName = firstName;</span>
+<span class="nc" id="L46">		this.lastName = lastName;</span>
+<span class="nc" id="L47">	}</span>
+
+	public Integer getId() {
+<span class="nc" id="L50">		return id;</span>
+	}
+
+	public void setId(Integer id) {
+<span class="nc" id="L54">		this.id = id;</span>
+<span class="nc" id="L55">	}</span>
+
+	public FierceNews getFierceNews() {
+<span class="nc" id="L58">		return fierceNews;</span>
+	}
+
+	public void setFierceNews(FierceNews fierceNews) {
+<span class="nc" id="L62">		this.fierceNews = fierceNews;</span>
+<span class="nc" id="L63">	}</span>
+
+	@Override
+	public String toString() {
+<span class="nc" id="L67">		return &quot;Author [firstName=&quot; + firstName + &quot;, lastName=&quot; + lastName + &quot;]&quot;;</span>
+	}
+
+	public String getFirstName() {
+<span class="nc" id="L71">		return firstName;</span>
+	}
+
+	public void setFirstName(String firstName) {
+<span class="nc" id="L75">		this.firstName = firstName;</span>
+<span class="nc" id="L76">	}</span>
+
+	public String getLastName() {
+<span class="nc" id="L79">		return lastName;</span>
+	}
+
+	public void setLastName(String lastName) {
+<span class="nc" id="L83">		this.lastName = lastName;</span>
+<span class="nc" id="L84">	}</span>
+
+	public Document getLuceneDocument() {
+<span class="nc" id="L87">		Document document = new Document();</span>
+<span class="nc" id="L88">		document.add(new StringField(ID, UUID.randomUUID().toString(), Field.Store.YES));</span>
+<span class="nc" id="L89">		document.add(new TextField(FIRST_NAME, firstName, Field.Store.YES));</span>
+<span class="nc" id="L90">		document.add(new TextField(LAST_NAME, firstName, Field.Store.YES));</span>
+<span class="nc" id="L91">		return document;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

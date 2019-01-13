@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">demo</a> &gt; <a href="index.source.html" class="el_package">com.quertle.demo.controller</a> &gt; <span class="el_source">SearchController.java</span></div><h1>SearchController.java</h1><pre class="source lang-java linenums">package com.quertle.demo.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.quertle.demo.dto.SearchDto;
+import com.quertle.demo.service.lucene.LuceneService;
+
+@Controller
+@RequestMapping(&quot;lucene&quot;)
+<span class="fc" id="L18">public class SearchController {</span>
+
+<span class="fc" id="L20">	private static final Logger LOG = LoggerFactory.getLogger(GeneralController.class);</span>
+
+	@Autowired
+	private LuceneService luceneService;
+
+	@PostMapping(&quot;/search&quot;)
+	public String search(@ModelAttribute SearchDto searchDto, Model model) {
+<span class="nc" id="L27">		LOG.info(&quot;Search :{}&quot;, searchDto.getContent());</span>
+<span class="nc" id="L28">		model.addAttribute(&quot;title&quot;, &quot;Lucene Search&quot;);</span>
+<span class="nc" id="L29">		model.addAttribute(&quot;search&quot;, luceneService.search(searchDto));</span>
+<span class="nc" id="L30">		return &quot;result&quot;;</span>
+	}
+
+	@GetMapping(&quot;/search&quot;)
+	public String getUIForSearch(Model model) {
+<span class="nc" id="L35">		model.addAttribute(&quot;title&quot;, &quot;Lucene Search&quot;);</span>
+<span class="nc" id="L36">		model.addAttribute(&quot;search&quot;, new SearchDto());</span>
+<span class="nc" id="L37">		return &quot;search&quot;;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.quertle.demo.fetching.FetchTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 30.565 s - in com.quertle.demo.fetching.FetchTest

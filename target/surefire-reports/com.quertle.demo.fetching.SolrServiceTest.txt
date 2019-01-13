@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.quertle.demo.fetching.SolrServiceTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.693 s - in com.quertle.demo.fetching.SolrServiceTest

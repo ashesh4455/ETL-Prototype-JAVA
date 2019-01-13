@@ -1,0 +1,9 @@
+com.quertle.sample
+com.quertle.sample.controller
+com.quertle.sample.dto
+com.quertle.sample.fetching
+com.quertle.sample.model
+com.quertle.sample.repository
+com.quertle.sample.service
+com.quertle.sample.service.lucene
+com.quertle.sample.utils

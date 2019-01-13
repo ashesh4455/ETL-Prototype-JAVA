@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FetchService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">demo</a> &gt; <a href="index.source.html" class="el_package">com.quertle.demo.service</a> &gt; <span class="el_source">FetchService.java</span></div><h1>FetchService.java</h1><pre class="source lang-java linenums">package com.quertle.demo.service;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.commons.io.FileUtils;
+import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import com.quertle.demo.exceptions.SomethingWrongException;
+import com.quertle.demo.model.Author;
+import com.quertle.demo.model.FierceNews;
+import com.quertle.demo.repository.AuthorRepository;
+import com.quertle.demo.repository.FierceNewsRepository;
+import com.quertle.demo.service.lucene.LuceneService;
+import com.quertle.demo.service.solr.SolrService;
+import com.quertle.demo.utils.DateUtils;
+
+@Service
+<span class="fc" id="L37">public class FetchService {</span>
+<span class="fc" id="L38">	private static final Logger LOG = LoggerFactory.getLogger(FetchService.class);</span>
+
+	@Autowired
+	private FierceNewsRepository fierceNewsRepository;
+
+	@Autowired
+	public AuthorRepository authorRepository;
+
+	@Value(&quot;${fierceNews.dataSource}&quot;)
+	private String dataSource;
+
+	@Autowired
+	private LuceneService luceneService;
+
+	@Autowired
+	private SolrService solrService;
+
+	/**
+	 * This method prints xml if data and source exists
+	 * 
+	 * @param dataSource
+	 */
+	public void saveIfExists(String dataSource) {
+<span class="nc" id="L61">		File file = new File(&quot;a.xml&quot;);</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">		if (file.exists()) {</span>
+<span class="nc" id="L64">			file.delete();</span>
+		}
+
+<span class="nc" id="L67">		byte[] fileContent = readFileContent(file, dataSource);</span>
+
+<span class="nc" id="L69">		List&lt;FierceNews&gt; generalFierceNews = parseXML(fileContent);</span>
+<span class="nc" id="L70">		setFullTextContent(generalFierceNews);</span>
+
+<span class="nc" id="L72">		LOG.info(&quot;News Content: {}&quot;, generalFierceNews);</span>
+
+//		loadFierceNewsToDatabase(generalFierceNews);
+		// loadFierceNewsToLucene(generalFierceNews);
+<span class="nc" id="L76">		 loadFierceNewsToSolr(generalFierceNews);</span>
+
+<span class="nc" id="L78">	}</span>
+
+	public byte[] readFileContent(File file, String dataSource) {
+		try {
+<span class="nc" id="L82">			FileUtils.copyURLToFile(new URL(dataSource), file, 60000, 10000);</span>
+<span class="nc" id="L83">			return Files.readAllBytes(file.toPath());</span>
+<span class="nc" id="L84">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L86">			e.printStackTrace();</span>
+<span class="nc" id="L87">			throw new SomethingWrongException(e.getMessage(), &quot;Printing of XML is not working.&quot;);</span>
+		}
+	}
+
+	private void loadFierceNewsToSolr(List&lt;FierceNews&gt; generalFierceNews) {
+<span class="nc" id="L92">		solrService.save(generalFierceNews);</span>
+<span class="nc" id="L93">	}</span>
+
+	/**
+	 * This method saves the data to lucene.
+	 * 
+	 * @param generalFierceNews
+	 */
+	private void loadFierceNewsToLucene(List&lt;FierceNews&gt; generalFierceNews) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L102">		luceneService.save(generalFierceNews);</span>
+<span class="nc" id="L103">	}</span>
+
+	/**
+	 * This method saves the fierce news and author details. First save the
+	 * Author to the Author Repository and save the FierceNews collection to
+	 * repository.
+	 * 
+	 * @param generalFierceNews
+	 */
+	public void loadFierceNewsToDatabase(List&lt;FierceNews&gt; generalFierceNews) {
+<span class="nc" id="L113">		fierceNewsRepository.saveAll(generalFierceNews);</span>
+<span class="nc" id="L114">		List&lt;Author&gt; authorLists = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L115">		generalFierceNews.stream().forEach(f -&gt; {</span>
+<span class="nc" id="L116">			f.getAuthor().forEach(a -&gt; {</span>
+<span class="nc" id="L117">				a.setFierceNews(f);</span>
+<span class="nc" id="L118">			});</span>
+<span class="nc" id="L119">			authorLists.addAll(f.getAuthor());</span>
+<span class="nc" id="L120">		});</span>
+<span class="nc" id="L121">		authorRepository.saveAll(authorLists);</span>
+<span class="nc" id="L122">	}</span>
+
+	/**
+	 * This method sets the full text from the url
+	 * 
+	 * @param generalFierceNews
+	 */
+	public void setFullTextContent(List&lt;FierceNews&gt; generalFierceNews) {
+		// TODO Auto-generated method stub
+<span class="nc bnc" id="L131" title="All 2 branches missed.">		generalFierceNews.parallelStream().filter(n -&gt; n.getUrlLink() != null).forEach(n -&gt; {</span>
+<span class="nc" id="L132">			n.setFullText(getContent(n.getUrlLink()));</span>
+<span class="nc" id="L133">		});</span>
+<span class="nc" id="L134">	}</span>
+
+	/**
+	 * This method return the html content from provided url.
+	 * 
+	 * @param url
+	 * @return
+	 */
+	private String getContent(String url) {
+		org.jsoup.nodes.Document doc;
+		try {
+<span class="nc" id="L145">			doc = Jsoup.connect(url).get();</span>
+<span class="nc" id="L146">			return doc.toString();</span>
+<span class="nc" id="L147">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L149">			e.printStackTrace();</span>
+		}
+<span class="nc" id="L151">		return &quot;&quot;;</span>
+	}
+
+	/**
+	 * 
+	 * @param content
+	 */
+	public List&lt;FierceNews&gt; parseXML(byte[] content) {
+<span class="nc" id="L159">		List&lt;FierceNews&gt; fierceNewsList = new ArrayList&lt;&gt;();</span>
+		try {
+<span class="nc" id="L161">			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();</span>
+<span class="nc" id="L162">			DocumentBuilder builder = factory.newDocumentBuilder();</span>
+
+<span class="nc" id="L164">			ByteArrayInputStream input = new ByteArrayInputStream(content);</span>
+<span class="nc" id="L165">			Document doc = builder.parse(input);</span>
+<span class="nc" id="L166">			Element root = doc.getDocumentElement();</span>
+<span class="nc" id="L167">			LOG.info(&quot;Root Name: {}&quot;, root.getNodeName());</span>
+<span class="nc" id="L168">			NodeList nodeList = doc.getElementsByTagName(&quot;doc&quot;);</span>
+<span class="nc" id="L169">			LOG.info(&quot;No of docs: {}&quot;, nodeList.getLength());</span>
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">			for (int i = 0; i &lt; nodeList.getLength(); i++) {</span>
+<span class="nc" id="L172">				FierceNews fierceNews = new FierceNews();</span>
+<span class="nc" id="L173">				Node node = nodeList.item(i);</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">				if (node.getNodeType() == Node.ELEMENT_NODE) {</span>
+<span class="nc" id="L175">					Element eElement = (Element) node;</span>
+<span class="nc" id="L176">					setTitle(fierceNews, eElement);</span>
+<span class="nc" id="L177">					setAuthor(fierceNews, eElement);</span>
+<span class="nc" id="L178">					setDatePublished(fierceNews, eElement);</span>
+<span class="nc" id="L179">					setUrlLink(fierceNews, eElement);</span>
+
+				}
+<span class="nc" id="L182">				fierceNewsList.add(fierceNews);</span>
+
+			}
+<span class="nc" id="L185">		} catch (Exception e) {</span>
+<span class="nc" id="L186">			e.printStackTrace();</span>
+<span class="nc" id="L187">		}</span>
+
+		// LOG.info(&quot;News lists: {}&quot;,fierceNewsList);
+<span class="nc" id="L190">		return fierceNewsList;</span>
+	}
+
+	/**
+	 * set url link from xml
+	 * 
+	 * @param fierceNews
+	 * @param eElement
+	 */
+	private void setUrlLink(FierceNews fierceNews, Element eElement) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L201">		NodeList urlLinks = eElement.getElementsByTagName(&quot;ext-link&quot;);</span>
+<span class="nc" id="L202">		LOG.info(&quot;No. of urlLink: {}&quot;, urlLinks.getLength());</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">		if (urlLinks.getLength() &gt;= 1) {</span>
+<span class="nc" id="L204">			Node urlNode = urlLinks.item(0);</span>
+<span class="nc" id="L205">			String urlLink = urlNode.getTextContent();</span>
+<span class="nc" id="L206">			LOG.info(&quot;Url Link Value: {}&quot;, urlNode.getTextContent());</span>
+<span class="nc" id="L207">			fierceNews.setUrlLink(urlLink);</span>
+		}
+<span class="nc" id="L209">	}</span>
+
+	/**
+	 * Set date from xml
+	 * 
+	 * @param fierceNews
+	 * @param eElement
+	 */
+	private void setDatePublished(FierceNews fierceNews, Element eElement) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L219">		NodeList datePublished = eElement.getElementsByTagName(&quot;date-published&quot;);</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">		for (int i = 0; i &lt; datePublished.getLength(); i++) {</span>
+<span class="nc" id="L221">			Node datePublishedNode = datePublished.item(i);</span>
+<span class="nc" id="L222">			String year = datePublishedNode.getFirstChild().getTextContent();</span>
+<span class="nc" id="L223">			String month = datePublishedNode.getFirstChild().getNextSibling().getTextContent();</span>
+<span class="nc" id="L224">			String day = datePublishedNode.getLastChild().getTextContent();</span>
+<span class="nc" id="L225">			LOG.info(&quot;Date Published: {}-{}-{}&quot;, year, month, day);</span>
+<span class="nc" id="L226">			fierceNews.setDatePublished(DateUtils.getDate(year, month, day));</span>
+		}
+
+		// String year = datePublishedNode.getFirstChild().getTextContent();
+		// String month = datePublishedNode.getTextContent();
+<span class="nc" id="L231">		LOG.info(&quot;Date Published: {}&quot;, fierceNews);</span>
+<span class="nc" id="L232">	}</span>
+
+	/**
+	 * Set authors from xml
+	 * 
+	 * @param fierceNews
+	 * @param eElement
+	 */
+	private void setAuthor(FierceNews fierceNews, Element eElement) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L242">		NodeList authors = eElement.getElementsByTagName(&quot;author&quot;);</span>
+<span class="nc" id="L243">		LOG.info(&quot;No of Authors: {}&quot;, authors.getLength());</span>
+<span class="nc" id="L244">		List&lt;Author&gt; authorList = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L246" title="All 2 branches missed.">		if (authors.getLength() &gt;= 1) {</span>
+			// multiple author in the data source is expected
+<span class="nc bnc" id="L248" title="All 2 branches missed.">			for (int i = 0; i &lt; authors.getLength(); i++) {</span>
+<span class="nc" id="L249">				Node authorNode = authors.item(i);</span>
+<span class="nc" id="L250">				String lastName = authorNode.getFirstChild().getTextContent();</span>
+<span class="nc" id="L251">				String firstName = authorNode.getLastChild().getTextContent();</span>
+<span class="nc" id="L252">				LOG.info(&quot;Single Author First Name: {}&quot;, authorNode.getFirstChild().getTextContent());</span>
+<span class="nc" id="L253">				LOG.info(&quot;Single Author Last Name: {}&quot;, authorNode.getLastChild().getTextContent());</span>
+
+<span class="nc" id="L255">				authorList.add(new Author(firstName, lastName));</span>
+
+			}
+<span class="nc" id="L258">			fierceNews.setAuthor(authorList);</span>
+		}
+<span class="nc" id="L260">	}</span>
+
+	/**
+	 * Set title from xml
+	 * 
+	 * @param fierceNews
+	 * @param eElement
+	 */
+	private void setTitle(FierceNews fierceNews, Element eElement) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L270">		NodeList titles = eElement.getElementsByTagName(&quot;title&quot;);</span>
+<span class="nc" id="L271">		LOG.info(&quot;No of titles: {}&quot;, titles.getLength());</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">		if (titles.getLength() &gt;= 1) {</span>
+<span class="nc" id="L273">			Node titleNode = titles.item(0);</span>
+<span class="nc" id="L274">			String title = titleNode.getTextContent();</span>
+<span class="nc" id="L275">			LOG.info(&quot;Title value: {}&quot;, titleNode.getTextContent());</span>
+<span class="nc" id="L276">			fierceNews.setTitle(title);</span>
+		}
+<span class="nc" id="L278">	}</span>
+
+	/**
+	 * This methods loads XML from data source to database. This Async separated
+	 * the process format the request one which runs in the background . The
+	 * return method for Async method should be void.
+	 */
+	@Async
+	public void saveFromXML() {
+<span class="nc" id="L287">		saveIfExists(dataSource);</span>
+
+<span class="nc" id="L289">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
